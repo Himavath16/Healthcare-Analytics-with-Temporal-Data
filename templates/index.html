@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Temporal Healthcare Analytics</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Temporal Healthcare Analytics</h1>
+
+    <section>
+      <h2>Secure Login</h2>
+      <div class="row">
+        <input id="username" placeholder="Username" />
+        <input id="password" type="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Patient Record Creation</h2>
+      <div class="grid">
+        <input id="patient_code" placeholder="Patient Code" />
+        <input id="full_name" placeholder="Full Name" />
+        <input id="dob" type="date" />
+        <input id="gender" placeholder="Gender" />
+      </div>
+      <button onclick="createPatient()">Create Patient</button>
+    </section>
+
+    <section>
+      <h2>Temporal Update (Diagnosis / Treatment)</h2>
+      <div class="grid">
+        <input id="entity_patient_id" placeholder="Patient ID" />
+        <input id="valid_start_date" type="date" />
+        <input id="diagnosis_code" placeholder="Diagnosis Code" />
+        <input id="diagnosis_text" placeholder="Diagnosis Text" />
+        <input id="treatment_plan" placeholder="Treatment Plan" />
+      </div>
+      <div class="row">
+        <button onclick="addDiagnosis()">Add Diagnosis Version</button>
+        <button onclick="addTreatment()">Add Treatment Version</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Historical Record Retrieval</h2>
+      <div class="row">
+        <input id="history_patient_id" placeholder="Patient ID" />
+        <input id="history_start" type="date" />
+        <input id="history_end" type="date" />
+        <button onclick="loadHistory()">Get Treatment History</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Time-based Analytics Dashboard</h2>
+      <div class="row">
+        <input id="analytics_start" type="date" />
+        <input id="analytics_end" type="date" />
+        <button onclick="runAnalytics('repeated-diagnoses')">Repeated Diagnoses</button>
+        <button onclick="runAnalytics('medication-changes')">Medication Changes</button>
+        <button onclick="runAnalytics('doctor-consultations')">Doctor Consultations</button>
+        <button onclick="runAnalytics('disease-trends')">Disease Trends</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Response</h2>
+      <pre id="output"></pre>
+    </section>
+  </main>
+
+  <script>
+    const out = document.getElementById('output');
+    const show = (data) => { out.textContent = JSON.stringify(data, null, 2); };
+
+    async function api(path, method = 'GET', payload = null) {
+      const res = await fetch(path, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: payload ? JSON.stringify(payload) : null,
+      });
+      const data = await res.json().catch(() => ({}));
+      show({ status: res.status, data });
+      return data;
+    }
+
+    function login() {
+      api('/api/login', 'POST', {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+      });
+    }
+
+    function createPatient() {
+      api('/api/patients', 'POST', {
+        patient_code: document.getElementById('patient_code').value,
+        full_name: document.getElementById('full_name').value,
+        dob: document.getElementById('dob').value,
+        gender: document.getElementById('gender').value,
+      });
+    }
+
+    function addDiagnosis() {
+      const id = document.getElementById('entity_patient_id').value;
+      api(`/api/patients/${id}/diagnosis`, 'POST', {
+        diagnosis_code: document.getElementById('diagnosis_code').value,
+        diagnosis_text: document.getElementById('diagnosis_text').value,
+        valid_start_date: document.getElementById('valid_start_date').value,
+      });
+    }
+
+    function addTreatment() {
+      const id = document.getElementById('entity_patient_id').value;
+      api(`/api/patients/${id}/treatment`, 'POST', {
+        treatment_plan: document.getElementById('treatment_plan').value,
+        valid_start_date: document.getElementById('valid_start_date').value,
+      });
+    }
+
+    function loadHistory() {
+      const id = document.getElementById('history_patient_id').value;
+      const start = document.getElementById('history_start').value;
+      const end = document.getElementById('history_end').value;
+      api(`/api/patients/${id}/history?start_date=${start}&end_date=${end}`);
+    }
+
+    function runAnalytics(name) {
+      const start = document.getElementById('analytics_start').value;
+      const end = document.getElementById('analytics_end').value;
+      api(`/api/analytics/${name}?start_date=${start}&end_date=${end}`);
+    }
+  </script>
+</body>
+</html>
